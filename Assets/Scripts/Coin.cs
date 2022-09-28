@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class Coin : MonoBehaviour
 {
+    private int score = 1;
     private void OnCollisionEnter(Collision other)
     {
         if (other.collider.tag == "Player")
         {
-            ScoreManager.instance.ChangeScore(1);
+            ScoreManager.instance.ChangeScore(score);
             Destroy(gameObject);
         }
     }

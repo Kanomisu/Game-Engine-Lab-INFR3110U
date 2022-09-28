@@ -33,10 +33,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        inputAction = new PlayerAction();
-
         inputAction.Enable();
-
     }
 
     private void OnDisable()
@@ -45,12 +42,15 @@ public class PlayerController : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
+        
         if (!instance)
         {
             instance = this;
         }
+
+        inputAction = new PlayerAction();
 
         inputAction.Player.Movement.performed += cntxt => move = cntxt.ReadValue<Vector2>();
         inputAction.Player.Movement.canceled += cntxt => move = Vector2.zero;
@@ -58,10 +58,14 @@ public class PlayerController : MonoBehaviour
         inputAction.Player.Jump.performed += cntxt => Jump();
         inputAction.Player.Shoot.performed += cntxt => Shoot();
 
+        inputAction.Player.Look.performed += cntxt => rotate = cntxt.ReadValue<Vector2>();
+        inputAction.Player.Look.canceled += cntxt => rotate = Vector2.zero;
+
         rb = GetComponent<Rigidbody>();
         playerAnimator = GetComponent<Animator>();
-        distanceToGround = GetComponent<Collider>().bounds.extents.y;
 
+        distanceToGround = GetComponent<Collider>().bounds.extents.y;
+        cameraRotation = new Vector3(transform.rotation.x, transform.rotation.y, transform.rotation.z);
     }
 
     private void Jump()
@@ -84,9 +88,27 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //looking around
+        cameraRotation = new Vector3(cameraRotation.x + rotate.y, cameraRotation.y + rotate.x, cameraRotation.z);
+
+        playerCamera.transform.rotation = Quaternion.Euler(cameraRotation);
+        transform.eulerAngles = new Vector3(transform.rotation.x, cameraRotation.y, transform.rotation.z);
+
         transform.Translate(Vector3.forward * move.y * Time.deltaTime * walkSpeed, Space.Self);
         transform.Translate(Vector3.right * move.x * Time.deltaTime * walkSpeed, Space.Self);
 
         isGrounded = Physics.Raycast(transform.position, -Vector3.up, distanceToGround);
+
+        //fix to movement
+        if (move == Vector2.zero)
+        {
+            isWalking = false;
+        }
+        else
+        {
+            isWalking = true;
+        }
+
+        playerAnimator.SetBool("isWalking", isWalking);
     }
 }
